@@ -74,7 +74,7 @@ int main() {
         cout << "経路: " << maxRoutePair.first << " -> " << maxRoutePair.second << endl;
         cout << "距離の合計: " << maxDistanceNoRoute << endl;
     } else {
-        cout << "最大距離の経路:" << endl;
+        cout << "最大距離の経路" << endl;
         cout << "経路: ";
         for (int node : maxPath) {
             cout << node << " ";
