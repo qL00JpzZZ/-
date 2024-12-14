@@ -5,7 +5,7 @@ using T = tuple<int, int, double>;
 
 int main() {
     vector<T> keiro;
-    cout << "データを入力してください" << endl;
+    cout << "データを入力し 終了キーで終了してください" << endl;
 
     string line;
     while (getline(cin, line)) {
