@@ -40,7 +40,7 @@ try:
         # 重複する品目は表示上空白に置き換え
         inventory_data["品目"] = inventory_data["品目"].mask(inventory_data["品目"].duplicated(), "")
 
-        # HTMLテーブルを作成して表示
+        # HTMLテーブルの作成
         html_content = ""
         for _, row in inventory_data.iterrows():
             html_content += (
@@ -73,6 +73,7 @@ try:
 
 except Exception as e:
     st.error(f"在庫データ取得時にエラーが発生しました: {e}")
+
 
 # ── メニューデータの表示 ──
 try:
@@ -122,6 +123,7 @@ try:
 except Exception as e:
     st.error(f"メニューデータ取得時にエラーが発生しました: {e}")
 
+
 # ── 新しいメニューの登録 ──
 st.caption('新しいメニューを追加')
 if "menu_info" not in st.session_state:
@@ -133,6 +135,7 @@ with st.form(key='menu_form'):
     submit_menu = st.form_submit_button('材料を入力')
 
     if submit_menu:
+        # セッション変数にメニューの材料情報を保持
         for i in range(int(num_ingredients)):
             ingredient_name = st.text_input(f'材料名 {i + 1}', key=f"ingredient_name_{i}")
             ingredient_qty = st.number_input(f'必要個数 {i + 1}', min_value=1, step=1, key=f"ingredient_qty_{i}")
@@ -146,6 +149,7 @@ with st.form(key='menu_form'):
             try:
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
+                # テーブルが存在しない場合は作成
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS menu (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,6 +158,13 @@ with st.form(key='menu_form'):
                         quantity INTEGER
                     )
                 """)
+                # 同じメニュー名のデータが存在するかチェック
+                cursor.execute("SELECT COUNT(*) FROM menu WHERE name = ?", (menu_name,))
+                existing_count = cursor.fetchone()[0]
+                if existing_count > 0:
+                    # 既に登録されている場合は古いデータを削除し更新する
+                    cursor.execute("DELETE FROM menu WHERE name = ?", (menu_name,))
+                # 新しい材料情報を挿入
                 for item in st.session_state["menu_info"]:
                     cursor.execute("""
                         INSERT INTO menu (name, ingredient, quantity)
