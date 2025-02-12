@@ -5,20 +5,19 @@ import pandas as pd
 st.title('データベースを表示するページ')
 st.caption('在庫、メニューの一覧が見れる、操作できる')
 
-# データベースファイルのパス
-db_path = "C:/zaiko/inventory_manegement/test_app/発注管理.db"  # 発注管理.pyで使用しているデータベースと同じパス
+# データベースファイルのパス（発注管理.pyで使用しているデータベースと同じパス）
+db_path = "C:/zaiko/inventory_manegement/test_app/発注管理.db"
 
-# データベース接続
+# データベース接続用のヘルパー関数
 def fetch_data(query):
     conn = sqlite3.connect(db_path)
     data = pd.read_sql_query(query, conn)
     conn.close()
     return data
 
-
-# データ表示処理
+# ── 在庫データの表示 ──
 try:
-    # テーブル作成（必要な場合）
+    # inventory テーブルを必要に応じて作成
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     cursor.execute("""
@@ -32,16 +31,16 @@ try:
     """)
     conn.close()
 
-    # データ取得
-    inventory_data = fetch_data("SELECT * FROM inventory ORDER BY 品目, id")  # 品目ごとにソート
+    # 在庫データ取得
+    inventory_data = fetch_data("SELECT * FROM inventory ORDER BY 品目, id")
 
     if not inventory_data.empty:
         st.write("在庫データ:")
 
-        # 重複する品目を空白に置き換える
+        # 重複する品目は表示上空白に置き換え
         inventory_data["品目"] = inventory_data["品目"].mask(inventory_data["品目"].duplicated(), "")
 
-        # HTMLテーブル作成
+        # HTMLテーブルを作成して表示
         html_content = ""
         for _, row in inventory_data.iterrows():
             html_content += (
@@ -53,7 +52,6 @@ try:
                 f"</tr>"
             )
 
-        # HTMLテーブル全体
         html_table = f"""
         <table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
             <thead>
@@ -69,7 +67,6 @@ try:
             </tbody>
         </table>
         """
-        # HTMLを表示
         st.markdown(html_table, unsafe_allow_html=True)
     else:
         st.write("在庫データはありません。")
@@ -77,14 +74,7 @@ try:
 except Exception as e:
     st.error(f"在庫データ取得時にエラーが発生しました: {e}")
 
-
-
-    
-    
-    
-    
-    
-# メニューデータを取得
+# ── メニューデータの表示 ──
 try:
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
@@ -102,19 +92,16 @@ try:
     if not menu_data.empty:
         st.write("メニューデータ:")
 
-        # データを「結合して表示する」形式に加工
         html_content = ""
         grouped_data = menu_data.groupby("name")  # メニュー名でグループ化
 
         for menu_name, group in grouped_data:
-            # グループごとのHTMLを生成
             html_content += f"<tr><td rowspan='{len(group)}'>{menu_name}</td>"
             for i, row in group.iterrows():
                 if i != group.index[0]:
                     html_content += "<tr>"
                 html_content += f"<td>{row['ingredient']}</td><td>{row['quantity']}</td></tr>"
 
-        # HTMLテーブルの全体構造
         html_table = f"""
         <table border="1" style="width:100%; border-collapse: collapse; text-align: left;">
             <thead>
@@ -134,29 +121,8 @@ try:
         st.write("メニューデータはありません。")
 except Exception as e:
     st.error(f"メニューデータ取得時にエラーが発生しました: {e}")
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-# 新しいメニューを登録
+
+# ── 新しいメニューの登録 ──
 st.caption('新しいメニューを追加')
 if "menu_info" not in st.session_state:
     st.session_state["menu_info"] = []
@@ -177,7 +143,6 @@ with st.form(key='menu_form'):
                 })
 
         if st.session_state["menu_info"]:
-            # メニュー情報をデータベースに保存（仮に「menu」というテーブルを使用）
             try:
                 conn = sqlite3.connect(db_path)
                 cursor = conn.cursor()
@@ -197,6 +162,6 @@ with st.form(key='menu_form'):
                 conn.commit()
                 conn.close()
                 st.success("メニューが登録されました！")
-                st.session_state["menu_info"] = []  # 登録後にセッションをリセット
+                st.session_state["menu_info"] = []
             except Exception as e:
                 st.error(f"エラーが発生しました: {e}")
